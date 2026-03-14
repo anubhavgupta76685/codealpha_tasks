@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Aesthetic gallery · add photos + lightbox</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem 1rem 3rem;
+        }
+
+        .gallery-container {
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        /* header + add section */
+        .gallery-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-radius: 60px;
+            box-shadow: 0 10px 25px -8px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .gallery-header h1 {
+            font-weight: 600;
+            font-size: 1.8rem;
+            background: linear-gradient(130deg, #1e293b, #3b4b62);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .add-photo-area {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .add-photo-area label {
+            background: #ffffff;
+            border: 1px dashed #94a3b8;
+            padding: 0.6rem 1.3rem;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+        }
+
+        .add-photo-area label:hover {
+            border-color: #0284c7;
+            background: #f0f9ff;
+            transform: scale(1.02);
+        }
+
+        .add-photo-area label i {
+            font-size: 1.2rem;
+            color: #0284c7;
+        }
+
+        #imageUpload {
+            display: none;
+        }
+
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.7rem;
+            margin-bottom: 2rem;
+            padding: 0.8rem 1.2rem;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 50px;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #334155;
+            cursor: pointer;
+            transition: 0.15s;
+            border: 1px solid transparent;
+        }
+
+        .filter-btn:hover {
+            background: #ffffffd0;
+            border-color: #cbd5e1;
+        }
+
+        .filter-btn.active {
+            background: #1e293b;
+            color: white;
+            box-shadow: 0 6px 14px rgba(30,41,59,0.25);
+        }
+
+        /* main grid */
+        .grid-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            transition: 0.2s;
+        }
+
+        /* gallery card */
+        .card {
+            position: relative;
+            border-radius: 28px;
+            overflow: hidden;
+            aspect-ratio: 1 / 1;
+            background: #e2e8f0;
+            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.15);
+            transition: all 0.4s cubic-bezier(0.15, 0.75, 0.4, 1);
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        .card:hover {
+            transform: scale(1.02) translateY(-6px);
+            box-shadow: 0 28px 38px -12px rgba(2, 84, 135, 0.3);
+            border-color: #bae6fd;
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.5s ease, filter 0.3s;
+        }
+
+        .card:hover img {
+            transform: scale(1.06);
+            filter: brightness(1.02) contrast(1.05);
+        }
+
+        /* overlay + category tag */
+        .card-category {
+            position: absolute;
+            bottom: 10px;
+            left: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 0.3rem 0.9rem;
+            border-radius: 30px;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(255,255,255,0.3);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover .card-category {
+            opacity: 1;
+        }
+
+        /* empty state */
+        .empty-gallery {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: #f1f5f9b0;
+            border-radius: 60px;
+            color: #475569;
+            font-size: 1.2rem;
+            border: 2px dashed #cbd5e1;
+        }
+
+        /* navigation arrows */
+        .nav-arrow {
+            background: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 300;
+            box-shadow: 0 12px 22px -10px #0f172a55;
+            cursor: pointer;
+            user-select: none;
+            transition: 0.15s;
+            border: none;
+            color: #1e293b;
+            flex-shrink: 0;
+            border: 1px solid #ffffff;
+        }
+
+        .nav-arrow:hover {
+            background: #1e293b;
+            color: white;
+            transform: scale(1.06);
+        }
+
+        .nav-arrow:active {
+            transform: scale(0.95);
+        }
+
+        /* lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(7px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-content {
+            max-width: 85vw;
+            max-height: 80vh;
+            border-radius: 32px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            border: 3px solid white;
+            transition: 0.2s;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 25px; right: 35px;
+            font-size: 3rem;
+            color: white;
+            cursor: pointer;
+            transition: 0.15s;
+            background: transparent;
+            border: none;
+        }
+        .lightbox-close:hover { transform: scale(1.2); color: #f87171; }
+
+        .lightbox-nav {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1.8rem;
+        }
+        .lightbox-nav button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 2.5rem;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            backdrop-filter: blur(6px);
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .lightbox-nav button:hover {
+            background: rgba(255,255,255,0.5);
+            color: black;
+        }
+
+        /* category badge inside lightbox */
+        .lightbox-category {
+            margin-top: 0.8rem;
+            color: white;
+            font-size: 1.2rem;
+            background: rgba(0,0,0,0.5);
+            padding: 0.3rem 2rem;
+            border-radius: 40px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* responsive */
+        @media (max-width: 600px) {
+            .gallery-header {
+                border-radius: 30px;
+                padding: 1rem 1.2rem;
+            }
+            .filter-bar {
+                border-radius: 30px;
+            }
+            .nav-arrow {
+                width: 38px;
+                height: 38px;
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="gallery-container">
+    <!-- header + add photo -->
+    <div class="gallery-header">
+        <h1>📸 snap · gallery</h1>
+        <div class="add-photo-area">
+            <label for="imageUpload"><i>➕</i> Add photos</label>
+            <input type="file" id="imageUpload" accept="image/*" multiple>
+        </div>
+    </div>
+
+    <!-- filter / categories (bonus) -->
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="nature">🌿 Nature</button>
+        <button class="filter-btn" data-filter="city">🌆 City</button>
+        <button class="filter-btn" data-filter="people">👥 People</button>
+        <button class="filter-btn" data-filter="other">✨ Other</button>
+    </div>
+
+    <!-- grid with prev/next arrows -->
+    <div class="grid-wrapper">
+        <button class="nav-arrow" id="prevPage" title="previous page">‹</button>
+        <div id="galleryGrid" class="image-grid">
+            <!-- cards will be injected from js + default demo -->
+        </div>
+        <button class="nav-arrow" id="nextPage" title="next page">›</button>
+    </div>
+</div>
+
+<!-- lightbox -->
+<div id="lightbox" class="lightbox">
+    <button class="lightbox-close" id="closeLightbox">&times;</button>
+    <img id="lightboxImg" class="lightbox-content" src="" alt="lightbox">
+    <div class="lightbox-category" id="lightboxCategory"></div>
+    <div class="lightbox-nav">
+        <button id="lightboxPrev">←</button>
+        <button id="lightboxNext">→</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- GLOBAL DATA ----------
+        let galleryItems = [];          // { id, src, category, name? }
+        let currentFilter = 'all';
+        let currentPage = 0;
+        const ITEMS_PER_PAGE = 12;       // grid items per page
+
+        // DOM elements
+        const grid = document.getElementById('galleryGrid');
+        const uploadInput = document.getElementById('imageUpload');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
+        const lightboxCategory = document.getElementById('lightboxCategory');
+        const closeLightbox = document.getElementById('closeLightbox');
+        const lightboxPrev = document.getElementById('lightboxPrev');
+        const lightboxNext = document.getElementById('lightboxNext');
+
+        // current lightbox index (from filtered list)
+        let currentLightboxIndex = 0;
+        let currentFilteredIds = [];   // sorted array of item ids (filtered & sorted)
+
+        // ---------- HELPER: category from filename or fallback ----------
+        function guessCategoryFromName(name) {
+            const lower = name.toLowerCase();
+            if (lower.includes('nature') || lower.includes('tree') || lower.includes('forest') || lower.includes('mountain') || lower.includes('flower')) return 'nature';
+            if (lower.includes('city') || lower.includes('building') || lower.includes('street') || lower.includes('urban')) return 'city';
+            if (lower.includes('people') || lower.includes('person') || lower.includes('man') || lower.includes('woman') || lower.includes('portrait')) return 'people';
+            return 'other';
+        }
+
+        // ---------- load default demo images (in case no upload) ----------
+        function loadDefaultImages() {
+            const defaultImages = [
+                { src: 'https://picsum.photos/id/15/300/300', category: 'nature' },   // nature
+                { src: 'https://picsum.photos/id/16/300/300', category: 'city' },     // city
+                { src: 'https://picsum.photos/id/17/300/300', category: 'people' },    // people
+                { src: 'https://picsum.photos/id/18/300/300', category: 'nature' },
+                { src: 'https://picsum.photos/id/26/300/300', category: 'city' },
+                { src: 'https://picsum.photos/id/27/300/300', category: 'people' },
+                { src: 'https://picsum.photos/id/28/300/300', category: 'other' },
+                { src: 'https://picsum.photos/id/29/300/300', category: 'nature' },
+                { src: 'https://picsum.photos/id/30/300/300', category: 'city' },
+                { src: 'https://picsum.photos/id/31/300/300', category: 'people' },
+                { src: 'https://picsum.photos/id/32/300/300', category: 'other' },
+                { src: 'https://picsum.photos/id/33/300/300', category: 'nature' },
+                { src: 'https://picsum.photos/id/34/300/300', category: 'city' }    // extra for pagination demo
+            ];
+            defaultImages.forEach((img, idx) => {
+                galleryItems.push({
+                    id: 'default-' + Date.now() + '-' + idx + Math.random(),
+                    src: img.src,
+                    category: img.category,
+                    name: `demo-${idx}`
+                });
+            });
+        }
+        loadDefaultImages();
+
+        // ---------- render current page (based on filter & page) ----------
+        function renderGrid() {
+            // filter items by category
+            const filtered = galleryItems.filter(item => 
+                currentFilter === 'all' || item.category === currentFilter
+            );
+
+            // calculate pagination
+            const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+            if (currentPage >= totalPages) currentPage = totalPages - 1;
+            if (currentPage < 0) currentPage = 0;
+
+            const start = currentPage * ITEMS_PER_PAGE;
+            const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
+
+            // update filtered ids for lightbox navigation (only current page? We'll use whole filtered list for lightbox)
+            currentFilteredIds = filtered.map(item => item.id);
+
+            // build html
+            if (pageItems.length === 0) {
+                grid.innerHTML = `<div class="empty-gallery">✨ no images · add some via upload</div>`;
+                return;
+            }
+
+            let html = '';
+            pageItems.forEach(item => {
+                html += `
+                    <div class="card" data-id="${item.id}" data-category="${item.category}">
+                        <img src="${item.src}" alt="gallery photo" loading="lazy">
+                        <span class="card-category">${item.category}</span>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+
+            // attach click event to each card (lightbox)
+            document.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const id = card.dataset.id;
+                    const index = currentFilteredIds.findIndex(i => i === id);
+                    if (index !== -1) openLightbox(index);
+                });
+            });
+        }
+
+        // ---------- open lightbox at given filtered-list index ----------
+        function openLightbox(index) {
+            if (!currentFilteredIds.length) return;
+            currentLightboxIndex = index;
+            const itemId = currentFilteredIds[currentLightboxIndex];
+            const item = galleryItems.find(it => it.id === itemId);
+            if (!item) return;
+
+            lightboxImg.src = item.src;
+            lightboxCategory.textContent = `🏷️ ${item.category}`;
+            lightbox.classList.add('active');
+        }
+
+        // ---------- update lightbox navigation ----------
+        function updateLightboxImage() {
+            if (!currentFilteredIds.length) {
+                closeLightbox.click();
+                return;
+            }
+            // wrap index
+            if (currentLightboxIndex < 0) currentLightboxIndex = currentFilteredIds.length - 1;
+            if (currentLightboxIndex >= currentFilteredIds.length) currentLightboxIndex = 0;
+
+            const itemId = currentFilteredIds[currentLightboxIndex];
+            const item = galleryItems.find(it => it.id === itemId);
+            if (item) {
+                lightboxImg.src = item.src;
+                lightboxCategory.textContent = `🏷️ ${item.category}`;
+            } else {
+                // fallback
+                lightbox.classList.remove('active');
+            }
+        }
+
+        // ---------- upload handler ----------
+        uploadInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const category = guessCategoryFromName(file.name);
+                        galleryItems.push({
+                            id: 'upload-' + Date.now() + '-' + Math.random() + file.name,
+                            src: event.target.result,
+                            category: category,
+                            name: file.name
+                        });
+                        // reset page to 0 to see new items, preserve filter
+                        currentPage = 0;
+                        renderGrid();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            // clear input to allow re-upload same files
+            uploadInput.value = '';
+        });
+
+        // ---------- filter click ----------
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                currentPage = 0;   // go to first page on filter
+                renderGrid();
+            });
+        });
+
+        // ---------- pagination arrows ----------
+        prevBtn.addEventListener('click', () => {
+            const filteredCount = galleryItems.filter(i => currentFilter === 'all' || i.category === currentFilter).length;
+            const total = Math.max(1, Math.ceil(filteredCount / ITEMS_PER_PAGE));
+            if (currentPage > 0) {
+                currentPage--;
+                renderGrid();
+            } // optional: loop? we keep no loop
+        });
+
+        nextBtn.addEventListener('click', () => {
+            const filteredCount = galleryItems.filter(i => currentFilter === 'all' || i.category === currentFilter).length;
+            const totalPages = Math.max(1, Math.ceil(filteredCount / ITEMS_PER_PAGE));
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                renderGrid();
+            }
+        });
+
+        // ---------- lightbox controls ----------
+        closeLightbox.addEventListener('click', () => {
+            lightbox.classList.remove('active');
+        });
+
+        lightboxPrev.addEventListener('click', () => {
+            if (currentFilteredIds.length) {
+                currentLightboxIndex = (currentLightboxIndex - 1 + currentFilteredIds.length) % currentFilteredIds.length;
+                updateLightboxImage();
+            }
+        });
+
+        lightboxNext.addEventListener('click', () => {
+            if (currentFilteredIds.length) {
+                currentLightboxIndex = (currentLightboxIndex + 1) % currentFilteredIds.length;
+                updateLightboxImage();
+            }
+        });
+
+        // close lightbox with overlay click
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) lightbox.classList.remove('active');
+        });
+
+        // keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+            if (e.key === 'Escape') lightbox.classList.remove('active');
+            if (e.key === 'ArrowLeft') {
+                lightboxPrev.click();
+                e.preventDefault();
+            }
+            if (e.key === 'ArrowRight') {
+                lightboxNext.click();
+                e.preventDefault();
+            }
+        });
+
+        // initial render
+        renderGrid();
+    })();
+</script>
+</body>
+</html>
